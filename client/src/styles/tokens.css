@@ -1,0 +1,48 @@
+:root {
+  /* Color — design.md §2 */
+  --ink: #14201C;
+  --paper: #EFEDE6;
+  --paper-raised: #F7F5EF;
+  --green-deep: #163832;
+  --brass: #A9852F;
+  --brass-soft: #C7A75C;
+  --stone: #6B675E;
+  --line: #DAD6C9;
+
+  /* Semantic status colors — design.md §2 */
+  --status-free-bg: #E4EEE8;
+  --status-free-text: #2B6B4F;
+  --status-pending-bg: #F3E8D2;
+  --status-pending-text: #8A6414;
+  --status-neutral-bg: #EAE9E4;
+  --status-neutral-text: var(--stone);
+  --status-urgent-bg: #F5E1E1;
+  --status-urgent-text: #B5484B;
+
+  /* Typography — design.md §3 */
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Type scale (desktop) — design.md §3 */
+  --text-hero: clamp(40px, 6vw, 68px);
+  --text-section-title: clamp(28px, 3vw, 34px);
+  --text-card-title: clamp(18px, 2vw, 22px);
+  --text-body: 15px;
+  --text-meta: 12px;
+  --text-eyebrow: 11px;
+
+  /* Layout & Spacing — design.md §4 */
+  --content-max-width: 1180px;
+  --side-padding: 32px;
+  --side-padding-mobile: 16px;
+  --card-gap: 24px;
+  --card-gap-mobile: 14px;
+  --radius-card: 8px;
+  --radius-pill: 20px;
+  --radius-button: 3px;
+
+  /* Breakpoints are literal values in media queries (custom properties
+     can't be used inside @media conditions), documented here for reference:
+     primary collapse at 900px. */
+}
