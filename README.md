@@ -1,6 +1,6 @@
 # Junoon
 
-**Where BBSUL comes alive.**
+**Where We come alive.**
 
 A campus event management platform for University — announcement, registration, offline-payment confirmation, entry, attendance, and certification, in one responsive web app.
 

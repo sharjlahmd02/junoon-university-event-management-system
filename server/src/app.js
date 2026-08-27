@@ -1,8 +1,9 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
-import mongoSanitize from "express-mongo-sanitize";
+import mongoSanitize from "./middleware/mongoSanitize.js";
 import healthRoutes from "./routes/healthRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 
@@ -20,6 +21,7 @@ app.use(express.json({ limit: "20kb" }));
 app.use(mongoSanitize());
 
 app.use("/api/health", healthRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
