@@ -4,6 +4,7 @@ import cors from "cors";
 import mongoSanitize from "./middleware/mongoSanitize.js";
 import healthRoutes from "./routes/healthRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import twoFactorRoutes from "./routes/twoFactorRoutes.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 
@@ -22,6 +23,7 @@ app.use(mongoSanitize());
 
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/auth/2fa", twoFactorRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

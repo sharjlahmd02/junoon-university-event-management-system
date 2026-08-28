@@ -70,9 +70,66 @@ const userSchema = new Schema(
         ref: "Event",
       },
     ],
+    // Password reset. The raw token is emailed to the user and never
+    // stored — only its SHA-256 hash lives here, same reasoning as
+    // passwordHash: if the DB is ever compromised, no one can produce a
+    // valid reset link from what's stored.
+    resetPasswordTokenHash: {
+      type: String,
+      select: false,
+      default: undefined,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+      default: undefined,
+    },
+    // Organizer-only 2FA (tasks.md "Added feature — Organizer 2FA").
+    // twoFactorEnabled stays false until enrollment is confirmed with a
+    // verified code (task 1.14) — generating a secret alone doesn't count.
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    // Encrypted via 2fa-kit's vault (AES-256-GCM, keyed by MASTER_KEY +
+    // this per-user salt). Never store the raw TOTP secret.
+    totpSecretEncrypted: {
+      type: String,
+      select: false,
+      default: undefined,
+    },
+    totpSalt: {
+      type: String,
+      select: false,
+      default: undefined,
+    },
+    // Replay protection per RFC 6238 (see 2fa-kit's verifyTotpWithDelta) —
+    // a code is only accepted if its step is strictly greater than this.
+    totpLastStep: {
+      type: Number,
+      select: false,
+      default: undefined,
+    },
+    // HMAC-SHA-256 digests (keyed by MASTER_KEY) of one-time backup codes,
+    // never the raw codes. Entries are removed as codes get consumed.
+    backupCodeHashes: {
+      type: [String],
+      select: false,
+      default: undefined,
+    },
   },
   { timestamps: true }
 );
+
+// 2FA fields are organizer-only, mirroring the enrolmentNumber pattern:
+// a student document must never carry them.
+["twoFactorEnabled", "totpSecretEncrypted", "totpSalt", "totpLastStep", "backupCodeHashes"].forEach((field) => {
+  userSchema.path(field).validate(function (value) {
+    if (this.role !== "student") return true;
+    if (field === "twoFactorEnabled") return value === false || value === undefined;
+    return value === undefined || (Array.isArray(value) && value.length === 0);
+  }, `${field} is not applicable for students`);
+});
 
 // Blocks the opposite direction: an organizer document must NOT carry an
 // enrolmentNumber. (The "required for students" direction is handled by
@@ -87,6 +144,12 @@ userSchema.path("enrolmentNumber").validate(function (value) {
 userSchema.set("toJSON", {
   transform: (doc, ret) => {
     delete ret.passwordHash;
+    delete ret.resetPasswordTokenHash;
+    delete ret.resetPasswordExpires;
+    delete ret.totpSecretEncrypted;
+    delete ret.totpSalt;
+    delete ret.totpLastStep;
+    delete ret.backupCodeHashes;
     delete ret.__v;
     return ret;
   },

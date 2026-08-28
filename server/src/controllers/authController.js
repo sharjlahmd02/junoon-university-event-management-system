@@ -2,7 +2,8 @@ import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { hashPassword, comparePassword } from "../utils/passwordUtils.js";
-import { signToken } from "../utils/jwtUtils.js";
+import { signToken, signPendingTwoFactorToken } from "../utils/jwtUtils.js";
+import { createResetToken, hashResetToken } from "../utils/resetTokenUtils.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -97,7 +98,85 @@ export const login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid email or password", 401);
   }
 
+  // Organizers with 2FA enabled don't get a full session token from a
+  // password match alone — a short-lived pending token instead, exchanged
+  // for the real one at /api/auth/2fa/verify (task 1.16). Students, and
+  // organizers who haven't finished enrollment yet, are unaffected.
+  if (user.role === "organizer" && user.twoFactorEnabled) {
+    const pendingToken = signPendingTwoFactorToken({ id: user._id.toString() });
+    return res.status(200).json({
+      twoFactorRequired: true,
+      pendingToken,
+      user: { name: user.name, email: user.email },
+    });
+  }
+
   const token = signToken({ id: user._id.toString(), role: user.role });
 
   res.status(200).json({ token, user: user.toJSON() });
+});
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== "string") {
+    throw new AppError("Email is required", 400);
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  // Always return the same generic response whether or not the account
+  // exists — a different response here would let an attacker enumerate
+  // registered emails.
+  const genericResponse = {
+    message: "If an account with that email exists, a reset link has been sent.",
+  };
+
+  if (!user) {
+    return res.status(200).json(genericResponse);
+  }
+
+  const { rawToken, tokenHash, expires } = createResetToken();
+  user.resetPasswordTokenHash = tokenHash;
+  user.resetPasswordExpires = expires;
+  await user.save();
+
+  // STOPGAP: no email service is wired up yet (see CLAUDE.md §1 — not a
+  // decided stack piece). Logging the reset link server-side so the flow
+  // is fully testable now; swap this for a real email send later without
+  // touching the token logic above.
+  console.log(`[password reset] link for ${normalizedEmail}: /reset-password?token=${rawToken}`);
+
+  res.status(200).json(genericResponse);
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || typeof token !== "string") {
+    throw new AppError("Reset token is required", 400);
+  }
+  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 8) {
+    throw new AppError("New password must be at least 8 characters", 400);
+  }
+
+  const tokenHash = hashResetToken(token);
+
+  const user = await User.findOne({
+    resetPasswordTokenHash: tokenHash,
+    resetPasswordExpires: { $gt: new Date() },
+  }).select("+resetPasswordTokenHash +resetPasswordExpires");
+
+  if (!user) {
+    throw new AppError("Invalid or expired reset token", 400);
+  }
+
+  user.passwordHash = await hashPassword(newPassword);
+  // Single-use: clear immediately so the same token can't be replayed.
+  user.resetPasswordTokenHash = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.status(200).json({ message: "Password has been reset. You can now log in." });
 });
