@@ -1,11 +1,17 @@
 const BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 async function apiRequest(endpoint, options = {}) {
+  const { token, ...fetchOptions } = options;
+
   let response;
   try {
     response = await fetch(`${BASE_URL}${endpoint}`, {
-      headers: { "Content-Type": "application/json", ...options.headers },
-      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...fetchOptions.headers,
+      },
+      ...fetchOptions,
     });
   } catch {
     throw new Error("Network error — check your connection or the server");
@@ -29,8 +35,8 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 export const api = {
-  get: (endpoint) => apiRequest(endpoint),
-  post: (endpoint, body) => apiRequest(endpoint, { method: "POST", body: JSON.stringify(body) }),
-  patch: (endpoint, body) => apiRequest(endpoint, { method: "PATCH", body: JSON.stringify(body) }),
-  delete: (endpoint) => apiRequest(endpoint, { method: "DELETE" }),
+  get: (endpoint, token) => apiRequest(endpoint, { token }),
+  post: (endpoint, body, token) => apiRequest(endpoint, { method: "POST", body: JSON.stringify(body), token }),
+  patch: (endpoint, body, token) => apiRequest(endpoint, { method: "PATCH", body: JSON.stringify(body), token }),
+  delete: (endpoint, token) => apiRequest(endpoint, { method: "DELETE", token }),
 };

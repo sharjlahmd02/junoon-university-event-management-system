@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
+import { EMAIL_RE, EMAIL_MAX_LENGTH, NAME_MAX_LENGTH } from "../utils/validators.js";
 
 const { Schema } = mongoose;
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const userSchema = new Schema(
   {
@@ -15,7 +14,7 @@ const userSchema = new Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 100,
+      maxlength: NAME_MAX_LENGTH,
     },
     email: {
       type: String,
@@ -23,6 +22,7 @@ const userSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
+      maxlength: EMAIL_MAX_LENGTH,
       validate: {
         validator: (v) => EMAIL_RE.test(v),
         message: "Invalid email address",
@@ -53,10 +53,14 @@ const userSchema = new Schema(
     // Student-only. `required` as a function so it's enforced only for students —
     // a plain boolean `required: true` would apply to organizers too, and a custom
     // `validate()` alone won't fire on an undefined value (Mongoose skips validators
-    // for undefined non-required paths).
+    // for undefined non-required paths). Uppercased via `set` at the schema level
+    // (not just in the controller) so ANY code path that creates/edits a user gets
+    // the same normalization -- prevents "bbsul-1" and "BBSUL-1" registering as
+    // two different students.
     enrolmentNumber: {
       type: String,
       trim: true,
+      uppercase: true,
       sparse: true,
       unique: true,
       required: function () {

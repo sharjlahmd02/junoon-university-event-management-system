@@ -1,10 +1,42 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home.jsx";
+import RootRedirect from "./pages/RootRedirect.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import TwoFactorSetup from "./pages/TwoFactorSetup.jsx";
+import StudentDashboard from "./pages/StudentDashboard.jsx";
+import OrganizerDashboard from "./pages/OrganizerDashboard.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/2fa-setup"
+        element={
+          <ProtectedRoute allowedRoles={["organizer"]}>
+            <TwoFactorSetup />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/organizer"
+        element={
+          <ProtectedRoute allowedRoles={["organizer"]}>
+            <OrganizerDashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

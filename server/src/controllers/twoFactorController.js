@@ -4,6 +4,7 @@ import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { getVault, getMasterKey } from "../utils/twoFactorUtils.js";
 import { verifyToken, isPendingTwoFactorToken, signToken } from "../utils/jwtUtils.js";
+import { TOKEN_MAX_LENGTH, CODE_MAX_LENGTH } from "../utils/validators.js";
 
 const TOTP_CODE_RE = /^\d{6}$/;
 
@@ -47,7 +48,7 @@ export const enroll = asyncHandler(async (req, res) => {
 export const verifyEnrollment = asyncHandler(async (req, res) => {
   const { code } = req.body;
 
-  if (!code || typeof code !== "string") {
+  if (!code || typeof code !== "string" || code.length > CODE_MAX_LENGTH) {
     throw new AppError("A 6-digit code is required", 400);
   }
 
@@ -91,10 +92,10 @@ export const verifyEnrollment = asyncHandler(async (req, res) => {
 export const verify = asyncHandler(async (req, res) => {
   const { pendingToken, code } = req.body;
 
-  if (!pendingToken || typeof pendingToken !== "string") {
+  if (!pendingToken || typeof pendingToken !== "string" || pendingToken.length > TOKEN_MAX_LENGTH) {
     throw new AppError("A pending session token is required", 400);
   }
-  if (!code || typeof code !== "string") {
+  if (!code || typeof code !== "string" || code.length > CODE_MAX_LENGTH) {
     throw new AppError("A code is required", 400);
   }
 
