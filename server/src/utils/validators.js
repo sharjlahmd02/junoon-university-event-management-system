@@ -29,6 +29,52 @@ const LEADING_TRAILING_WHITESPACE_RE = /^\s|\s$/;
 export const TOKEN_MAX_LENGTH = 256;
 export const CODE_MAX_LENGTH = 32;
 
+// Event-related constants (spec.md §3, §4.4, §7). Centralized here so the
+// Event schema, event controller, and (conceptually) the client's mirrored
+// copy all reference the same source of truth instead of drifting.
+export const EVENT_TYPES = ["audience", "participation"];
+export const FEE_TYPES = ["free", "paid"];
+// spec.md §4.4 lists these four as the browse/filter categories.
+export const EVENT_CATEGORIES = ["technical", "cultural", "sports", "audience-notice"];
+// Mirrors the Event.status virtual (Event.js) -- kept here so the list
+// filter and the model's own getter can't drift apart.
+export const EVENT_STATUSES = ["upcoming", "live", "completed", "cancelled"];
+
+export const EVENT_TITLE_MAX_LENGTH = 150;
+export const EVENT_DESCRIPTION_MAX_LENGTH = 5000;
+export const EVENT_VENUE_MAX_LENGTH = 200;
+export const EVENT_DEPARTMENT_MAX_LENGTH = 100;
+export const EVENT_CANCEL_REASON_MAX_LENGTH = 500;
+
+// Generic bounded free-text check shared by several Event fields (title,
+// venue, cancelReason) that don't need their own character-class rules the
+// way name/enrolment/etc. do. `collapseWhitespace` is off for multi-line
+// fields (e.g. description) so authored newlines/paragraphs survive.
+export function validateBoundedString(raw, { min = 1, max, label, collapseWhitespace = true }) {
+  if (typeof raw !== "string") return { valid: false, error: `${label} is required` };
+  let trimmed = raw.trim();
+  if (collapseWhitespace) trimmed = trimmed.replace(/[ \t]+/g, " ");
+  if (trimmed.length < min) {
+    return { valid: false, error: `${label} must be at least ${min} character${min === 1 ? "" : "s"}` };
+  }
+  if (trimmed.length > max) {
+    return { valid: false, error: `${label} must be at most ${max} characters` };
+  }
+  return { valid: true, trimmed };
+}
+
+// Optional-aware date parser. Returns { valid: true, date: undefined } for
+// an absent/empty value so callers can distinguish "not provided" from
+// "provided but invalid" without duplicating that check everywhere.
+export function parseOptionalDate(raw, label) {
+  if (raw === undefined || raw === null || raw === "") return { valid: true, date: undefined };
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    return { valid: false, error: `${label} is not a valid date` };
+  }
+  return { valid: true, date };
+}
+
 export function isValidEmail(value) {
   return typeof value === "string" && value.length <= EMAIL_MAX_LENGTH && EMAIL_RE.test(value);
 }
