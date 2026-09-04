@@ -6,13 +6,28 @@ import TwoFactorSetup from "./pages/TwoFactorSetup.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import OrganizerDashboard from "./pages/OrganizerDashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import PublicOnlyRoute from "./components/PublicOnlyRoute.jsx";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
+            <Login />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicOnlyRoute>
+            <Register />
+          </PublicOnlyRoute>
+        }
+      />
       <Route
         path="/2fa-setup"
         element={
@@ -37,6 +52,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      
     </Routes>
   );
 }

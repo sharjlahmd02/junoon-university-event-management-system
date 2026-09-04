@@ -31,6 +31,27 @@ export function signPendingTwoFactorToken(payload) {
   });
 }
 
+// 10 minutes: enrollment involves scanning a QR code with an authenticator
+// app and typing back the code it shows -- longer than the 2-minute
+// pending-2FA-login window (which is just re-typing a code you already
+// have), short enough that a leaked enrollment token isn't useful for long.
+const PENDING_ENROLLMENT_EXPIRY = "10m";
+const PENDING_ENROLLMENT_PURPOSE = "2fa_enroll_pending";
+
+export function signPendingEnrollmentToken(payload) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not set. Check your .env file (see .env.example).");
+  }
+  return jwt.sign({ ...payload, purpose: PENDING_ENROLLMENT_PURPOSE }, secret, {
+    expiresIn: PENDING_ENROLLMENT_EXPIRY,
+  });
+}
+
+export function isPendingEnrollmentToken(payload) {
+  return payload?.purpose === PENDING_ENROLLMENT_PURPOSE;
+}
+
 export function isPendingTwoFactorToken(payload) {
   return payload?.purpose === PENDING_2FA_PURPOSE;
 }
