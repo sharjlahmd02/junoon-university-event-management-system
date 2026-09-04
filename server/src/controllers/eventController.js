@@ -13,6 +13,7 @@ import {
   validateDepartment,
   parseOptionalDate,
 } from "../utils/validators.js";
+import mongoose from "mongoose";
 
 // Organizer-only (enforced by requireRole in the route, and re-checked
 // nowhere else here since organizerId is deliberately never read from the
@@ -262,4 +263,26 @@ export const listEvents = asyncHandler(async (req, res) => {
       totalPages: Math.ceil(total / limit) || 0,
     },
   });
+});
+
+// Public route -- event detail page (spec.md §4.4). :id is validated as a
+// well-formed ObjectId before ever reaching the DB (an invalid shape is a
+// 400, not a 404 -- those are different failure modes: "not shaped like an
+// id" vs. "shaped like one but nothing there"). Organizer contact info is
+// populated in because spec.md §4.4 requires it on this page and it isn't
+// part of the Event document itself.
+export const getEventById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid event id", 400);
+  }
+
+  const event = await Event.findById(id).populate("organizerId", "name email phone department");
+
+  if (!event) {
+    throw new AppError("Event not found", 404);
+  }
+
+  res.status(200).json({ event: event.toJSON() });
 });
