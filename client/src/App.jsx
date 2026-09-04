@@ -5,29 +5,15 @@ import Register from "./pages/Register.jsx";
 import TwoFactorSetup from "./pages/TwoFactorSetup.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import OrganizerDashboard from "./pages/OrganizerDashboard.jsx";
+import NotFound from "./pages/NotFound.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import PublicOnlyRoute from "./components/PublicOnlyRoute.jsx";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route
-        path="/login"
-        element={
-          <PublicOnlyRoute>
-            <Login />
-          </PublicOnlyRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicOnlyRoute>
-            <Register />
-          </PublicOnlyRoute>
-        }
-      />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route
         path="/2fa-setup"
         element={
@@ -52,7 +38,8 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
+      {/* Catch-all: must stay last so it doesn't shadow real routes above it. */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

@@ -1,0 +1,57 @@
+.notfound-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--side-padding-mobile);
+  background: var(--paper);
+  text-align: center;
+}
+
+.notfound-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.notfound-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-eyebrow);
+  letter-spacing: 0.12em;
+  color: var(--brass);
+  margin: 0 0 10px;
+}
+
+.notfound-heading {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-section-title);
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+
+.notfound-subheading {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--stone);
+  line-height: 1.5;
+  margin: 0 0 28px;
+}
+
+.notfound-button {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-body);
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-button);
+  padding: 12px 24px;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.notfound-button:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
