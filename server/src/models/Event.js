@@ -7,7 +7,7 @@ import {
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_VENUE_MAX_LENGTH,
   EVENT_DEPARTMENT_MAX_LENGTH,
-  EVENT_CANCEL_REASON_MAX_LENGTH,
+  EVENT_CHANGE_REASON_MAX_LENGTH,
 } from "../utils/validators.js";
 
 const { Schema } = mongoose;
@@ -126,18 +126,21 @@ const eventSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    cancelReason: {
+    lastChangeReason: {
       type: String,
       trim: true,
-      maxlength: EVENT_CANCEL_REASON_MAX_LENGTH,
+      maxlength: EVENT_CHANGE_REASON_MAX_LENGTH,
       default: "",
+    },
+    lastChangeAt: {
+      type: Date,
     },
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // --- Conditional-field guards (mirrors the User model's role-based guards) ---
@@ -153,7 +156,8 @@ eventSchema.path("feeType").validate(function (value) {
 
 eventSchema.path("amount").validate(function (value) {
   if (this.type === "audience") return value === undefined;
-  if (this.type === "participation" && this.feeType === "free") return value === undefined;
+  if (this.type === "participation" && this.feeType === "free")
+    return value === undefined;
   return true;
 }, "amount is only applicable to paid participation events");
 
@@ -164,11 +168,14 @@ eventSchema.path("capacity").validate(function (value) {
 
 // Required reason on cancellation (spec.md §4.5: "cancel/reschedule
 // allowed with a required reason logged").
-eventSchema.path("cancelReason").validate(function (value) {
-  if (this.cancelled) return typeof value === "string" && value.trim().length > 0;
-  return true;
-}, "A reason is required when cancelling an event");
-
+eventSchema.path("lastChangeReason").validate(function (value) {
+  if (this.isNew) return true;
+  const requiresReason =
+    (this.isModified("cancelled") && this.cancelled === true) ||
+    this.isModified("dateTime");
+  if (!requiresReason) return true;
+  return typeof value === "string" && value.trim().length > 0;
+}, "A reason is required when cancelling or rescheduling an event");
 // --- Derived status (Phase 2 kickoff decision: computed, not stored) ---
 // upcoming -> live -> completed based on dateTime/endDateTime, with
 // cancelled as the only override. If endDateTime is absent, the event is
