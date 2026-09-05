@@ -23,7 +23,10 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => readStoredSession()?.token ?? null);
 
   const persistSession = useCallback((nextToken, nextUser) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: nextToken, user: nextUser }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ token: nextToken, user: nextUser }),
+    );
     setToken(nextToken);
     setUser(nextUser);
   }, []);
@@ -46,13 +49,24 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (credentials) => {
       const res = await authApi.login(credentials);
+      if (res.twoFactorEnrollmentRequired) {
+        return {
+          twoFactorEnrollmentRequired: true,
+          enrollmentToken: res.enrollmentToken,
+          user: res.user,
+        };
+      }
       if (res.twoFactorRequired) {
-        return { twoFactorRequired: true, pendingToken: res.pendingToken, user: res.user };
+        return {
+          twoFactorRequired: true,
+          pendingToken: res.pendingToken,
+          user: res.user,
+        };
       }
       persistSession(res.token, res.user);
       return { twoFactorRequired: false, user: res.user };
     },
-    [persistSession]
+    [persistSession],
   );
 
   // Second step of organizer login -- exchanges the pending token + code
@@ -63,37 +77,36 @@ export function AuthProvider({ children }) {
       persistSession(res.token, res.user);
       return { user: res.user, remainingBackupCodes: res.remainingBackupCodes };
     },
-    [persistSession]
+    [persistSession],
   );
 
   // Called after the forced-enrollment flow (task 1.17/1.18) confirms 2FA
   // is now on, so the locally held user snapshot reflects it without
   // requiring a fresh login.
-  const markTwoFactorEnabled = useCallback(() => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev, twoFactorEnabled: true };
-      const stored = readStoredSession();
-      if (stored) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: stored.token, user: next }));
-      }
-      return next;
-    });
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      user,
-      token,
-      isAuthenticated: Boolean(token && user),
-      register,
-      login,
-      completeTwoFactorLogin,
-      markTwoFactorEnabled,
-      logout,
-    }),
-    [user, token, register, login, completeTwoFactorLogin, markTwoFactorEnabled, logout]
+  const completeTwoFactorEnrollment = useCallback(
+    async ({ enrollmentToken, code }) => {
+      const res = await authApi.verifyTwoFactorEnrollment({
+        enrollmentToken,
+        code,
+      });
+      persistSession(res.token, res.user);
+      return { user: res.user };
+    },
+    [persistSession],
   );
+const value = useMemo(
+  () => ({
+    user,
+    token,
+    isAuthenticated: Boolean(token && user),
+    register,
+    login,
+    completeTwoFactorLogin,
+    completeTwoFactorEnrollment,
+    logout,
+  }),
+  [user, token, register, login, completeTwoFactorLogin, completeTwoFactorEnrollment, logout]
+);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

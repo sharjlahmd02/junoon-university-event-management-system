@@ -18,7 +18,8 @@ export const authApi = {
 
   // Enrollment endpoints need a real session token (organizer already has
   // one at this point, even before 2FA is fully set up).
-  enrollTwoFactor: (token) => api.post("/auth/2fa/enroll", {}, token),
-  verifyTwoFactorEnrollment: (code, token) =>
-    api.post("/auth/2fa/verify-enrollment", { code }, token),
+  enrollTwoFactor: (enrollmentToken) =>
+    api.post("/auth/2fa/enroll", { enrollmentToken }),
+  verifyTwoFactorEnrollment: ({ enrollmentToken, code }) =>
+    api.post("/auth/2fa/verify-enrollment", { enrollmentToken, code }),
 };
