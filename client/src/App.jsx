@@ -6,6 +6,7 @@ import TwoFactorSetup from "./pages/TwoFactorSetup.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import OrganizerDashboard from "./pages/OrganizerDashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import PublicOnlyRoute from "./components/PublicOnlyRoute.jsx";
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
           </ProtectedRoute>
         }
       />
+      {/* Catch-all: must stay last so it doesn't shadow real routes above it. */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

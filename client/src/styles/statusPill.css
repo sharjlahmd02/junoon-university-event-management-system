@@ -1,0 +1,29 @@
+.status-pill {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-eyebrow);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.status-pill--free {
+  background: var(--status-free-bg);
+  color: var(--status-free-text);
+}
+
+.status-pill--pending {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.status-pill--neutral {
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-text);
+}
+
+.status-pill--urgent {
+  background: var(--status-urgent-bg);
+  color: var(--status-urgent-text);
+}

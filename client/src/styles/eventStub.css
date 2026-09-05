@@ -1,0 +1,122 @@
+.event-stub {
+  display: flex;
+  align-items: stretch;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease;
+}
+
+.event-stub:hover {
+  box-shadow: 0 4px 16px rgba(20, 32, 28, 0.08);
+}
+
+.event-stub-main {
+  flex: 1;
+  min-width: 0;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-stub-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brass);
+  margin: 0;
+}
+
+.event-stub-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--text-card-title);
+  color: var(--ink);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-stub-meta {
+  font-family: var(--font-body);
+  font-size: var(--text-meta);
+  color: var(--stone);
+  margin: 0;
+}
+
+/* Dashed vertical divider plus two page-colored dots that "punch" through
+   the card at top/bottom -- design.md §5's perforation technique. The
+   dots are filled with the page background (--paper), not either side's
+   panel color, so they read as an actual hole rather than a colored
+   circle sitting on top of the card. */
+.event-stub-perforation {
+  position: relative;
+  width: 0;
+  border-left: 1px dashed var(--line);
+  flex-shrink: 0;
+}
+
+.event-stub-dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.event-stub-dot--top {
+  top: -7px;
+}
+
+.event-stub-dot--bottom {
+  bottom: -7px;
+}
+
+.event-stub-date {
+  flex-shrink: 0;
+  width: 88px;
+  background: var(--green-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.event-stub-day {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--paper);
+  line-height: 1;
+}
+
+.event-stub-month {
+  font-family: var(--font-mono);
+  font-size: var(--text-eyebrow);
+  letter-spacing: 0.08em;
+  color: var(--brass-soft);
+}
+
+@media (max-width: 900px) {
+  .event-stub-main {
+    padding: 14px 16px;
+    gap: 4px;
+  }
+
+  .event-stub-date {
+    width: 64px;
+  }
+
+  .event-stub-day {
+    font-size: 20px;
+  }
+}
