@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { hashPassword, comparePassword } from "../utils/passwordUtils.js";
-import { signToken, signPendingTwoFactorToken } from "../utils/jwtUtils.js";
+import { signToken, signPendingTwoFactorToken, signPendingEnrollmentToken } from "../utils/jwtUtils.js";
 import { createResetToken, hashResetToken } from "../utils/resetTokenUtils.js";
 import {
   isValidEmail,
@@ -121,11 +121,29 @@ export const login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid email or password", 401);
   }
 
-  // Organizers with 2FA enabled don't get a full session token from a
-  // password match alone — a short-lived pending token instead, exchanged
-  // for the real one at /api/auth/2fa/verify (task 1.16). Students, and
-  // organizers who haven't finished enrollment yet, are unaffected.
-  if (user.role === "organizer" && user.twoFactorEnabled) {
+  // Organizers never get a full session token straight from a password
+  // match -- 2FA is mandatory (tasks.md Phase 1 addendum), not opt-in, so
+  // every organizer login branches into one of two short-lived, scoped
+  // tokens instead:
+  //   - not yet enrolled  -> enrollment token (forces them through
+  //     /2fa/enroll + /verify-enrollment before they can get a real session)
+  //   - already enrolled  -> pending-2FA token (existing flow, exchanged
+  //     for a real session at /2fa/verify)
+  // Previously this only branched on `twoFactorEnabled === true`, which
+  // meant a never-enrolled organizer fell through to the same
+  // unrestricted signToken(...) below as a normal login -- making 2FA
+  // effectively skippable by simply never completing enrollment. Students
+  // are unaffected either way.
+  if (user.role === "organizer") {
+    if (!user.twoFactorEnabled) {
+      const enrollmentToken = signPendingEnrollmentToken({ id: user._id.toString() });
+      return res.status(200).json({
+        twoFactorEnrollmentRequired: true,
+        enrollmentToken,
+        user: { name: user.name, email: user.email },
+      });
+    }
+
     const pendingToken = signPendingTwoFactorToken({ id: user._id.toString() });
     return res.status(200).json({
       twoFactorRequired: true,

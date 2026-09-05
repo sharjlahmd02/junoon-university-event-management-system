@@ -1,14 +1,14 @@
 import { Router } from "express";
-import requireAuth from "../middleware/requireAuth.js";
-import requireRole from "../middleware/requireRole.js";
 import { enroll, verifyEnrollment, verify } from "../controllers/twoFactorController.js";
 
 const router = Router();
 
-router.post("/enroll", requireAuth, requireRole("organizer"), enroll);
-router.post("/verify-enrollment", requireAuth, requireRole("organizer"), verifyEnrollment);
-// No requireAuth -- there is no full session at this point, only the
-// short-lived pending token issued by login(), which this route verifies itself.
+// Neither route below uses requireAuth -- there is no full session at
+// this point, only the short-lived enrollment/pending token issued by
+// login(), which each route verifies itself (see
+// twoFactorController.resolveEnrollingOrganizer and .verify).
+router.post("/enroll", enroll);
+router.post("/verify-enrollment", verifyEnrollment);
 router.post("/verify", verify);
 
 export default router;
