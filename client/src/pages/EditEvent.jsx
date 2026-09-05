@@ -63,7 +63,14 @@ function EditEvent() {
   return (
     <div className="event-form-page">
       <h1 className="event-form-page-title">Edit event</h1>
-      <EventForm mode="edit" initialEvent={event} onSubmit={handleSubmit} submitLabel="Save changes" />
+      <p className="event-form-page-subtitle">Editing is only available until the event starts.</p>
+      <EventForm
+        mode="edit"
+        initialEvent={event}
+        onSubmit={handleSubmit}
+        submitLabel="Save changes"
+        cancelHref={`/events/${id}`}
+      />
 
       {!event.cancelled && (
         <>

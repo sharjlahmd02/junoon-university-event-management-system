@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { EVENT_CATEGORIES } from "../utils/eventConstants.js";
 
 function toDatetimeLocal(iso) {
@@ -7,6 +8,9 @@ function toDatetimeLocal(iso) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+const TITLE_MAX = 150;
+const DESCRIPTION_MAX = 5000;
 
 const EMPTY_VALUES = {
   title: "",
@@ -22,7 +26,16 @@ const EMPTY_VALUES = {
   capacity: "",
 };
 
-function EventForm({ mode, initialEvent, onSubmit, submitLabel }) {
+// Shared by CreateEvent and EditEvent (task 2.8) -- same field set and
+// validation for both, so the two flows can't silently drift apart.
+//
+// Cancelling an event lives elsewhere (see CancelEventCard), a separate,
+// explicit action -- more consequential and harder to undo than editing a
+// typo in the venue, so it isn't one more checkbox buried in here.
+// Rescheduling (changing dateTime) DOES live here, since it's a normal
+// field edit that just happens to need a required reason attached
+// (spec.md §4.5).
+function EventForm({ mode, initialEvent, onSubmit, submitLabel, cancelHref = "/dashboard/organizer" }) {
   const isEdit = mode === "edit";
 
   const [values, setValues] = useState(() => {
@@ -125,118 +138,190 @@ function EventForm({ mode, initialEvent, onSubmit, submitLabel }) {
 
   return (
     <form className="event-form" onSubmit={handleSubmit}>
-      {error && <p className="form-error">{error}</p>}
-
-      <label className="event-form-field">
-        <span>Title</span>
-        <input type="text" value={values.title} onChange={(e) => setField("title", e.target.value)} maxLength={150} required />
-      </label>
-
-      <label className="event-form-field">
-        <span>Description</span>
-        <textarea
-          value={values.description}
-          onChange={(e) => setField("description", e.target.value)}
-          rows={6}
-          maxLength={5000}
-          required
-        />
-      </label>
-
-      <div className="event-form-row">
-        <label className="event-form-field">
-          <span>Event type</span>
-          <select value={values.type} onChange={(e) => setField("type", e.target.value)} disabled={isEdit}>
-            <option value="audience">Audience-only (notice)</option>
-            <option value="participation">Participation (registration)</option>
-          </select>
-          {isEdit && <small className="event-form-hint">Type can't be changed after creation.</small>}
-        </label>
-
-        <label className="event-form-field">
-          <span>Category</span>
-          <select value={values.category} onChange={(e) => setField("category", e.target.value)}>
-            {EVENT_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="event-form-row">
-        <label className="event-form-field">
-          <span>Venue</span>
-          <input type="text" value={values.venue} onChange={(e) => setField("venue", e.target.value)} maxLength={200} required />
-        </label>
-
-        <label className="event-form-field">
-          <span>Department</span>
-          <input type="text" value={values.department} onChange={(e) => setField("department", e.target.value)} required />
-        </label>
-      </div>
-
-      <div className="event-form-row">
-        <label className="event-form-field">
-          <span>Date &amp; time</span>
-          <input type="datetime-local" value={values.dateTime} onChange={(e) => setField("dateTime", e.target.value)} required />
-        </label>
-
-        <label className="event-form-field">
-          <span>End date &amp; time (optional)</span>
-          <input type="datetime-local" value={values.endDateTime} onChange={(e) => setField("endDateTime", e.target.value)} />
-        </label>
-      </div>
-
-      {isEdit && dateChanged && (
-        <label className="event-form-field">
-          <span>Reason for reschedule</span>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={2}
-            maxLength={500}
-            placeholder="Registered students will see this reason."
-            required
-          />
-        </label>
+      {error && (
+        <p className="form-error event-form-top-error" role="alert">
+          {error}
+        </p>
       )}
 
-      {values.type === "participation" && (
+      <section className="event-form-section">
+        <div className="event-form-section-heading">
+          <p className="event-form-section-eyebrow">01 — Event details</p>
+          <p className="event-form-section-hint">What is it, and what should people know?</p>
+        </div>
+
+        <label className="event-form-field">
+          <span>Title</span>
+          <input
+            type="text"
+            value={values.title}
+            onChange={(e) => setField("title", e.target.value)}
+            maxLength={TITLE_MAX}
+            placeholder="e.g. Robotics Cup 2026"
+            required
+          />
+          <small className="event-form-counter">
+            {values.title.length}/{TITLE_MAX}
+          </small>
+        </label>
+
+        <label className="event-form-field">
+          <span>Description</span>
+          <textarea
+            value={values.description}
+            onChange={(e) => setField("description", e.target.value)}
+            rows={6}
+            maxLength={DESCRIPTION_MAX}
+            placeholder="What's happening, who it's for, and anything students should know before registering."
+            required
+          />
+          <small className="event-form-counter">
+            {values.description.length}/{DESCRIPTION_MAX}
+          </small>
+        </label>
+
         <div className="event-form-row">
           <label className="event-form-field">
-            <span>Fee type</span>
-            <select value={values.feeType} onChange={(e) => setField("feeType", e.target.value)}>
-              <option value="free">Free</option>
-              <option value="paid">Paid</option>
+            <span>Event type</span>
+            <select value={values.type} onChange={(e) => setField("type", e.target.value)} disabled={isEdit}>
+              <option value="audience">Audience-only (notice)</option>
+              <option value="participation">Participation (registration)</option>
             </select>
+            {isEdit && <small className="event-form-hint">Type can't be changed after creation.</small>}
           </label>
 
-          {values.feeType === "paid" && (
-            <label className="event-form-field">
-              <span>Amount (Rs.)</span>
-              <input type="number" min="1" value={values.amount} onChange={(e) => setField("amount", e.target.value)} required />
-            </label>
-          )}
-
           <label className="event-form-field">
-            <span>Capacity</span>
+            <span>Category</span>
+            <select value={values.category} onChange={(e) => setField("category", e.target.value)}>
+              {EVENT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="event-form-section">
+        <div className="event-form-section-heading">
+          <p className="event-form-section-eyebrow">02 — Where &amp; when</p>
+          <p className="event-form-section-hint">Venue, department, and the schedule.</p>
+        </div>
+
+        <div className="event-form-row">
+          <label className="event-form-field">
+            <span>Venue</span>
             <input
-              type="number"
-              min="1"
-              step="1"
-              value={values.capacity}
-              onChange={(e) => setField("capacity", e.target.value)}
+              type="text"
+              value={values.venue}
+              onChange={(e) => setField("venue", e.target.value)}
+              maxLength={200}
+              placeholder="e.g. Engineering Block, Ground Floor"
               required
             />
           </label>
+
+          <label className="event-form-field">
+            <span>Department</span>
+            <input
+              type="text"
+              value={values.department}
+              onChange={(e) => setField("department", e.target.value)}
+              placeholder="e.g. Computer Science"
+              required
+            />
+          </label>
+
+          <label className="event-form-field">
+            <span>Date &amp; time</span>
+            <input
+              type="datetime-local"
+              value={values.dateTime}
+              onChange={(e) => setField("dateTime", e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="event-form-field">
+            <span>End date &amp; time (optional)</span>
+            <input
+              type="datetime-local"
+              value={values.endDateTime}
+              onChange={(e) => setField("endDateTime", e.target.value)}
+            />
+          </label>
         </div>
+
+        {isEdit && dateChanged && (
+          <label className="event-form-field event-form-reason-field">
+            <span>Reason for reschedule</span>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+              maxLength={500}
+              placeholder="Registered students will see this reason."
+              required
+            />
+          </label>
+        )}
+      </section>
+
+      {values.type === "participation" && (
+        <section className="event-form-section">
+          <div className="event-form-section-heading">
+            <p className="event-form-section-eyebrow">03 — Fees &amp; capacity</p>
+            <p className="event-form-section-hint">Registration is offline-confirmed (spec.md §3.2) — no payment gateway.</p>
+          </div>
+
+          <div className="event-form-row">
+            <label className="event-form-field">
+              <span>Fee type</span>
+              <select value={values.feeType} onChange={(e) => setField("feeType", e.target.value)}>
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+              </select>
+            </label>
+
+            {values.feeType === "paid" && (
+              <label className="event-form-field">
+                <span>Amount (Rs.)</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={values.amount}
+                  onChange={(e) => setField("amount", e.target.value)}
+                  required
+                />
+              </label>
+            )}
+
+            <label className="event-form-field">
+              <span>Capacity</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={values.capacity}
+                onChange={(e) => setField("capacity", e.target.value)}
+                placeholder="Seats available"
+                required
+              />
+            </label>
+          </div>
+        </section>
       )}
 
-      <button type="submit" className="btn-primary event-form-submit" disabled={submitting}>
-        {submitting ? "Saving…" : submitLabel}
-      </button>
+      <div className="event-form-actions">
+        <button type="submit" className="btn-primary event-form-submit" disabled={submitting}>
+          {submitting && <span className="event-form-spinner" aria-hidden="true" />}
+          {submitting ? "Saving…" : submitLabel}
+        </button>
+        <Link to={cancelHref} className="btn-secondary event-form-discard">
+          Discard
+        </Link>
+      </div>
     </form>
   );
 }
