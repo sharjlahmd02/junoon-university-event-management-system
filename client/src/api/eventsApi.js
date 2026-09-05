@@ -12,4 +12,7 @@ export const eventsApi = {
   },
 
   getById: (id) => api.get(`/events/${id}`),
+
+  create: (payload, token) => api.post("/events", payload, token),
+  update: (id, payload, token) => api.patch(`/events/${id}`, payload, token),
 };
