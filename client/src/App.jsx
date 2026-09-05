@@ -5,6 +5,7 @@ import Register from "./pages/Register.jsx";
 import TwoFactorSetup from "./pages/TwoFactorSetup.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import OrganizerDashboard from "./pages/OrganizerDashboard.jsx";
+import NotFound from "./pages/NotFound.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PublicOnlyRoute from "./components/PublicOnlyRoute.jsx";
 
@@ -12,16 +13,28 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       <Route
-        path="/2fa-setup"
+        path="/login"
         element={
-          <ProtectedRoute allowedRoles={["organizer"]}>
-            <TwoFactorSetup />
-          </ProtectedRoute>
+          <PublicOnlyRoute>
+            <Login />
+          </PublicOnlyRoute>
         }
       />
+      <Route
+        path="/register"
+        element={
+          <PublicOnlyRoute>
+            <Register />
+          </PublicOnlyRoute>
+        }
+      />
+      {/* Not wrapped in ProtectedRoute: during enrollment there is no
+          session yet -- login() only ever hands an unenrolled organizer
+          an enrollmentToken, never a full session. TwoFactorSetup guards
+          itself by checking for that token in router state and showing
+          its own "session expired" state if it's missing. */}
+      <Route path="/2fa-setup" element={<TwoFactorSetup />} />
       <Route
         path="/dashboard/student"
         element={
