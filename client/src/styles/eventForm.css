@@ -1,5 +1,5 @@
 .event-form-page {
-  max-width: 720px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 32px var(--side-padding) 60px;
 }
@@ -16,7 +16,14 @@
   font-weight: 500;
   font-size: var(--text-section-title);
   color: var(--ink);
-  margin: 0 0 24px;
+  margin: 0 0 8px;
+}
+
+.event-form-page-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--stone);
+  margin: 0 0 28px;
 }
 
 .event-form-status-text {
@@ -29,19 +36,64 @@
 .event-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 24px;
+}
+
+.event-form-top-error {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+}
+
+/* --- Sectioned layout: each logical group of fields is its own panel
+   with a numbered eyebrow label, reading like a real multi-step creation
+   flow rather than one long list of inputs. --- */
+
+.event-form-section {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 26px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .event-form-section {
+    padding: 20px 20px;
+  }
+}
+
+.event-form-section-heading {
+  margin-bottom: 2px;
+}
+
+.event-form-section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brass);
+  margin: 0 0 4px;
+}
+
+.event-form-section-hint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--stone);
+  margin: 0;
 }
 
 .event-form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px 24px;
+  align-items: start;
 }
 
-@media (max-width: 640px) {
-  .event-form-row {
-    grid-template-columns: 1fr;
-  }
+.event-form-row .event-form-field {
+  max-width: 420px;
 }
 
 .event-form-field {
@@ -49,6 +101,7 @@
   flex-direction: column;
   gap: 6px;
   font-family: var(--font-body);
+  position: relative;
 }
 
 .event-form-field > span {
@@ -65,7 +118,7 @@
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-button);
-  background: var(--paper-raised);
+  background: var(--paper);
   color: var(--ink);
 }
 
@@ -82,28 +135,85 @@
   cursor: not-allowed;
 }
 
+.event-form-counter {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--stone);
+  margin-top: -2px;
+}
+
 .event-form-hint {
   font-family: var(--font-body);
   font-size: 12px;
   color: var(--stone);
 }
 
+.event-form-reason-field {
+  background: var(--status-pending-bg);
+  border: 1px solid var(--status-pending-text);
+  border-radius: var(--radius-button);
+  padding: 12px 14px;
+}
+
+.event-form-reason-field > span {
+  color: var(--status-pending-text);
+}
+
+.event-form-reason-field textarea {
+  background: var(--paper);
+}
+
+.event-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .event-form-submit {
-  align-self: flex-start;
-  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-form-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(239, 237, 230, 0.4);
+  border-top-color: var(--paper);
+  border-radius: 50%;
+  animation: event-form-spin 0.7s linear infinite;
+}
+
+@keyframes event-form-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-form-spinner {
+    animation: none;
+  }
+}
+
+.event-form-discard {
+  text-decoration: none;
 }
 
 .event-form-divider {
   border: none;
   border-top: 1px solid var(--line);
-  margin: 36px 0 24px;
+  margin: 12px 0 4px;
 }
+
+/* --- Cancel event: separate, deliberately heavier-weight card --- */
 
 .cancel-event-card {
   background: var(--status-urgent-bg);
   border: 1px solid var(--status-urgent-text);
   border-radius: var(--radius-card);
-  padding: 20px;
+  padding: 20px 24px;
 }
 
 .cancel-event-title {
@@ -135,11 +245,19 @@
   background: transparent;
   color: var(--status-urgent-text);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .cancel-event-open-btn:hover {
   background: var(--status-urgent-text);
   color: var(--paper);
+}
+
+.cancel-event-open-btn:focus-visible,
+.cancel-event-confirm-btn:focus-visible,
+.cancel-event-back-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }
 
 .cancel-event-card--open .event-form-field {
@@ -182,4 +300,10 @@
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cancel-event-open-btn {
+    transition: none;
+  }
 }

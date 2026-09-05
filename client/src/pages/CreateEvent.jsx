@@ -16,7 +16,8 @@ function CreateEvent() {
   return (
     <div className="event-form-page">
       <h1 className="event-form-page-title">Create event</h1>
-      <EventForm mode="create" onSubmit={handleSubmit} submitLabel="Publish event" />
+      <p className="event-form-page-subtitle">Published instantly — there's no approval queue</p>
+      <EventForm mode="create" onSubmit={handleSubmit} submitLabel="Publish event" cancelHref="/dashboard/organizer" />
     </div>
   );
 }
