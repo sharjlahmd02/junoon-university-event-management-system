@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PublicOnlyRoute from "./components/PublicOnlyRoute.jsx";
 import Browse from "./pages/Browse.jsx";
+import EventDetail from "./pages/EventDetail.jsx";
 
 function App() {
   return (
@@ -58,6 +59,15 @@ function App() {
         element={
           <PublicOnlyRoute>
             <Browse />
+          </PublicOnlyRoute>
+        }
+      />
+
+      <Route
+        path="/events/:id"
+        element={
+          <PublicOnlyRoute>
+            <EventDetail />
           </PublicOnlyRoute>
         }
       />

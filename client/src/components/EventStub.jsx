@@ -6,9 +6,7 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 
 // The signature "ticket stub" card (design.md §5): main content on the
 // left, a torn-edge date block on the right, joined by a dashed
-// perforation. design.md reserves this motif for things that behave like
-// a ticket -- actual events -- so this component should only ever wrap
-// Event data, not generic list items elsewhere in the app.
+// perforation. Reserved for actual events per design.md's own rule.
 function EventStub({ event }) {
   const date = new Date(event.dateTime);
   const day = date.getDate();
@@ -17,12 +15,13 @@ function EventStub({ event }) {
   return (
     <Link to={`/events/${event._id}`} className="event-stub">
       <div className="event-stub-main">
-        <p className="event-stub-eyebrow">{event.category.replace("-", " ")}</p>
+        <div className="event-stub-top">
+          <p className="event-stub-eyebrow">{event.category.replace("-", " ")}</p>
+          <StatusPill status={event.status} />
+        </div>
         <h3 className="event-stub-title">{event.title}</h3>
-        <p className="event-stub-meta">
-          {event.venue} · {event.department}
-        </p>
-        <StatusPill status={event.status} />
+        <p className="event-stub-venue">{event.venue}</p>
+        <span className="event-stub-department">{event.department}</span>
       </div>
       <div className="event-stub-perforation" aria-hidden="true">
         <span className="event-stub-dot event-stub-dot--top" />
