@@ -107,7 +107,7 @@ function EventDetail() {
       <div className="event-detail-page">
         <div className="event-detail-message-panel">
           <p>This event doesn't exist, or the link may be out of date.</p>
-          <Link to="/browse" className="btn-primary">
+          <Link to="/events" className="btn-primary">
             Back to browse
           </Link>
         </div>
@@ -120,7 +120,7 @@ function EventDetail() {
       <div className="event-detail-page">
         <div className="event-detail-message-panel event-detail-message-panel--error">
           <p>{error}</p>
-          <Link to="/browse" className="btn-primary">
+          <Link to="/events" className="btn-primary">
             Back to browse
           </Link>
         </div>
@@ -137,7 +137,7 @@ function EventDetail() {
 
   return (
     <div className="event-detail-page">
-      <Link to="/browse" className="event-detail-back">
+      <Link to="/events" className="event-detail-back">
         ← Back to browse
       </Link>
 
