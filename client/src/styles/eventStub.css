@@ -7,11 +7,26 @@
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .event-stub:hover {
   box-shadow: 0 4px 16px rgba(20, 32, 28, 0.08);
+  transform: translateY(-1px);
+}
+
+.event-stub:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-stub {
+    transition: none;
+  }
+  .event-stub:hover {
+    transform: none;
+  }
 }
 
 .event-stub-main {
@@ -21,6 +36,13 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.event-stub-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .event-stub-eyebrow {
@@ -37,24 +59,31 @@
   font-weight: 500;
   font-size: var(--text-card-title);
   color: var(--ink);
-  margin: 0;
+  margin: 2px 0 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.event-stub-meta {
+.event-stub-venue {
   font-family: var(--font-body);
   font-size: var(--text-meta);
   color: var(--stone);
   margin: 0;
 }
 
-/* Dashed vertical divider plus two page-colored dots that "punch" through
-   the card at top/bottom -- design.md §5's perforation technique. The
-   dots are filled with the page background (--paper), not either side's
-   panel color, so they read as an actual hole rather than a colored
-   circle sitting on top of the card. */
+.event-stub-department {
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--stone);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  margin-top: 2px;
+}
+
 .event-stub-perforation {
   position: relative;
   width: 0;
@@ -104,6 +133,53 @@
   font-size: var(--text-eyebrow);
   letter-spacing: 0.08em;
   color: var(--brass-soft);
+}
+
+/* --- Skeleton loading state --- */
+
+.event-stub--skeleton {
+  pointer-events: none;
+}
+
+.skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--line);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-bar--eyebrow {
+  width: 70px;
+  height: 9px;
+}
+
+.skeleton-bar--title {
+  width: 75%;
+  height: 18px;
+  margin-top: 6px;
+}
+
+.skeleton-bar--venue {
+  width: 50%;
+}
+
+.event-stub-date--skeleton {
+  background: var(--line);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar,
+  .event-stub-date--skeleton {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 @media (max-width: 900px) {

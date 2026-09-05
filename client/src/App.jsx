@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import RootRedirect from "./pages/RootRedirect.jsx";
 import Browse from "./pages/Browse.jsx";
-import EventDetail from "./pages";
+import EventDetail from "./pages/EventDetail.jsx";
 import CreateEvent from "./pages/CreateEvent.jsx";
 import EditEvent from "./pages/EditEvent.jsx";
 import Login from "./pages/Login.jsx";
