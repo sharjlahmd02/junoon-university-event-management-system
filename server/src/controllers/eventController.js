@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import Event from "../models/Event.js";
+import Registration from "../models/Registration.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
@@ -9,12 +11,11 @@ import {
   EVENT_TITLE_MAX_LENGTH,
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_VENUE_MAX_LENGTH,
+  EVENT_CHANGE_REASON_MAX_LENGTH,
   validateBoundedString,
   validateDepartment,
   parseOptionalDate,
-  EVENT_CHANGE_REASON_MAX_LENGTH,
 } from "../utils/validators.js";
-import mongoose from "mongoose";
 
 // Organizer-only (enforced by requireRole in the route, and re-checked
 // nowhere else here since organizerId is deliberately never read from the
@@ -34,10 +35,7 @@ export const createEvent = asyncHandler(async (req, res) => {
     capacity,
   } = req.body;
 
-  const titleCheck = validateBoundedString(title, {
-    max: EVENT_TITLE_MAX_LENGTH,
-    label: "Title",
-  });
+  const titleCheck = validateBoundedString(title, { max: EVENT_TITLE_MAX_LENGTH, label: "Title" });
   if (!titleCheck.valid) throw new AppError(titleCheck.error, 400);
 
   const descriptionCheck = validateBoundedString(description, {
@@ -48,32 +46,22 @@ export const createEvent = asyncHandler(async (req, res) => {
   if (!descriptionCheck.valid) throw new AppError(descriptionCheck.error, 400);
 
   if (!EVENT_TYPES.includes(type)) {
-    throw new AppError(
-      `Event type must be one of: ${EVENT_TYPES.join(", ")}`,
-      400,
-    );
+    throw new AppError(`Event type must be one of: ${EVENT_TYPES.join(", ")}`, 400);
   }
 
   if (!EVENT_CATEGORIES.includes(category)) {
-    throw new AppError(
-      `Category must be one of: ${EVENT_CATEGORIES.join(", ")}`,
-      400,
-    );
+    throw new AppError(`Category must be one of: ${EVENT_CATEGORIES.join(", ")}`, 400);
   }
 
   const departmentCheck = validateDepartment(department);
   if (!departmentCheck.valid) throw new AppError(departmentCheck.error, 400);
 
-  const venueCheck = validateBoundedString(venue, {
-    max: EVENT_VENUE_MAX_LENGTH,
-    label: "Venue",
-  });
+  const venueCheck = validateBoundedString(venue, { max: EVENT_VENUE_MAX_LENGTH, label: "Venue" });
   if (!venueCheck.valid) throw new AppError(venueCheck.error, 400);
 
   const dateCheck = parseOptionalDate(dateTime, "Date/time");
   if (!dateCheck.valid) throw new AppError(dateCheck.error, 400);
-  if (dateCheck.date === undefined)
-    throw new AppError("Date/time is required", 400);
+  if (dateCheck.date === undefined) throw new AppError("Date/time is required", 400);
 
   const endDateCheck = parseOptionalDate(endDateTime, "End date/time");
   if (!endDateCheck.valid) throw new AppError(endDateCheck.error, 400);
@@ -92,39 +80,20 @@ export const createEvent = asyncHandler(async (req, res) => {
   let normalizedCapacity;
 
   if (type === "audience") {
-    if (
-      feeType !== undefined ||
-      amount !== undefined ||
-      capacity !== undefined
-    ) {
-      throw new AppError(
-        "Audience-only events cannot have a fee type, amount, or capacity",
-        400,
-      );
+    if (feeType !== undefined || amount !== undefined || capacity !== undefined) {
+      throw new AppError("Audience-only events cannot have a fee type, amount, or capacity", 400);
     }
   } else {
     // type === "participation"
     if (!FEE_TYPES.includes(feeType)) {
-      throw new AppError(
-        `Fee type must be one of: ${FEE_TYPES.join(", ")}`,
-        400,
-      );
+      throw new AppError(`Fee type must be one of: ${FEE_TYPES.join(", ")}`, 400);
     }
     normalizedFeeType = feeType;
 
     if (feeType === "paid") {
       const amountNum = Number(amount);
-      if (
-        amount === undefined ||
-        amount === null ||
-        amount === "" ||
-        Number.isNaN(amountNum) ||
-        amountNum <= 0
-      ) {
-        throw new AppError(
-          "A positive amount is required for paid events",
-          400,
-        );
+      if (amount === undefined || amount === null || amount === "" || Number.isNaN(amountNum) || amountNum <= 0) {
+        throw new AppError("A positive amount is required for paid events", 400);
       }
       normalizedAmount = amountNum;
     } else if (amount !== undefined) {
@@ -139,10 +108,7 @@ export const createEvent = asyncHandler(async (req, res) => {
       !Number.isInteger(capacityNum) ||
       capacityNum < 1
     ) {
-      throw new AppError(
-        "A capacity of at least 1 is required for participation events",
-        400,
-      );
+      throw new AppError("A capacity of at least 1 is required for participation events", 400);
     }
     normalizedCapacity = capacityNum;
   }
@@ -208,9 +174,7 @@ function statusFilter(status, now) {
     case "live":
       return {
         cancelled: false,
-        $expr: {
-          $and: [{ $lte: ["$dateTime", now] }, { $gte: [effectiveEnd, now] }],
-        },
+        $expr: { $and: [{ $lte: ["$dateTime", now] }, { $gte: [effectiveEnd, now] }] },
       };
     case "completed":
       return { cancelled: false, $expr: { $lt: [effectiveEnd, now] } };
@@ -230,10 +194,7 @@ export const listEvents = asyncHandler(async (req, res) => {
 
   if (category !== undefined) {
     if (!EVENT_CATEGORIES.includes(category)) {
-      throw new AppError(
-        `Category must be one of: ${EVENT_CATEGORIES.join(", ")}`,
-        400,
-      );
+      throw new AppError(`Category must be one of: ${EVENT_CATEGORIES.join(", ")}`, 400);
     }
     filter.category = category;
   }
@@ -242,25 +203,18 @@ export const listEvents = asyncHandler(async (req, res) => {
     if (typeof department !== "string" || department.trim() === "") {
       throw new AppError("Department filter cannot be empty", 400);
     }
-    filter.department = {
-      $regex: `^${escapeRegex(department.trim())}$`,
-      $options: "i",
-    };
+    filter.department = { $regex: `^${escapeRegex(department.trim())}$`, $options: "i" };
   }
 
   if (date !== undefined) {
     const range = parseDateOnly(date);
-    if (!range)
-      throw new AppError("Date filter must be in YYYY-MM-DD format", 400);
+    if (!range) throw new AppError("Date filter must be in YYYY-MM-DD format", 400);
     filter.dateTime = { $gte: range.start, $lt: range.end };
   }
 
   if (status !== undefined) {
     if (!EVENT_STATUSES.includes(status)) {
-      throw new AppError(
-        `Status must be one of: ${EVENT_STATUSES.join(", ")}`,
-        400,
-      );
+      throw new AppError(`Status must be one of: ${EVENT_STATUSES.join(", ")}`, 400);
     }
     Object.assign(filter, statusFilter(status, new Date()));
   }
@@ -326,10 +280,7 @@ export const getEventById = asyncHandler(async (req, res) => {
     throw new AppError("Invalid event id", 400);
   }
 
-  const event = await Event.findById(id).populate(
-    "organizerId",
-    "name email phone department",
-  );
+  const event = await Event.findById(id).populate("organizerId", "name email phone department");
 
   if (!event) {
     throw new AppError("Event not found", 404);
@@ -359,10 +310,7 @@ export const updateEvent = asyncHandler(async (req, res) => {
   }
 
   if (Date.now() >= event.dateTime.getTime()) {
-    throw new AppError(
-      "This event has already started and can no longer be edited",
-      409,
-    );
+    throw new AppError("This event has already started and can no longer be edited", 409);
   }
 
   // type is intentionally not editable after creation -- switching an
@@ -390,10 +338,7 @@ export const updateEvent = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (title !== undefined) {
-    const check = validateBoundedString(title, {
-      max: EVENT_TITLE_MAX_LENGTH,
-      label: "Title",
-    });
+    const check = validateBoundedString(title, { max: EVENT_TITLE_MAX_LENGTH, label: "Title" });
     if (!check.valid) throw new AppError(check.error, 400);
     event.title = check.trimmed;
   }
@@ -409,20 +354,14 @@ export const updateEvent = asyncHandler(async (req, res) => {
   }
 
   if (venue !== undefined) {
-    const check = validateBoundedString(venue, {
-      max: EVENT_VENUE_MAX_LENGTH,
-      label: "Venue",
-    });
+    const check = validateBoundedString(venue, { max: EVENT_VENUE_MAX_LENGTH, label: "Venue" });
     if (!check.valid) throw new AppError(check.error, 400);
     event.venue = check.trimmed;
   }
 
   if (category !== undefined) {
     if (!EVENT_CATEGORIES.includes(category)) {
-      throw new AppError(
-        `Category must be one of: ${EVENT_CATEGORIES.join(", ")}`,
-        400,
-      );
+      throw new AppError(`Category must be one of: ${EVENT_CATEGORIES.join(", ")}`, 400);
     }
     event.category = category;
   }
@@ -465,13 +404,27 @@ export const updateEvent = asyncHandler(async (req, res) => {
 
   // Same type/fee rules as creation (spec.md §3.1, §3.2), re-checked here
   // since type itself can't change but its fee-related fields still can.
+  //
+  // Once at least one student has registered, feeType/amount are locked
+  // and capacity can't drop below the current registration count -- a
+  // student who registered under one price/free status shouldn't have
+  // that silently change after the fact (Phase 3 kickoff decision, agreed
+  // with the user). Registration.amountCharged (task 3.1) separately
+  // snapshots what each registrant actually agreed to, independent of
+  // this lock, so the record stays correct even if this check were ever
+  // bypassed by a future direct-write path.
   if (event.type === "participation") {
-    if (feeType !== undefined) {
+    const registrationCount =
+      feeType !== undefined || amount !== undefined || capacity !== undefined
+        ? await Registration.countDocuments({ eventId: event._id })
+        : 0;
+
+    if (feeType !== undefined && feeType !== event.feeType) {
+      if (registrationCount > 0) {
+        throw new AppError("Fee type can't be changed once students have registered for this event", 409);
+      }
       if (!FEE_TYPES.includes(feeType)) {
-        throw new AppError(
-          `Fee type must be one of: ${FEE_TYPES.join(", ")}`,
-          400,
-        );
+        throw new AppError(`Fee type must be one of: ${FEE_TYPES.join(", ")}`, 400);
       }
       event.feeType = feeType;
       if (feeType === "free") event.amount = undefined;
@@ -482,32 +435,28 @@ export const updateEvent = asyncHandler(async (req, res) => {
       }
       const amountNum = Number(amount);
       if (Number.isNaN(amountNum) || amountNum <= 0) {
-        throw new AppError(
-          "A positive amount is required for paid events",
-          400,
-        );
+        throw new AppError("A positive amount is required for paid events", 400);
+      }
+      if (registrationCount > 0 && amountNum !== event.amount) {
+        throw new AppError("Amount can't be changed once students have registered for this event", 409);
       }
       event.amount = amountNum;
     }
     if (capacity !== undefined) {
       const capacityNum = Number(capacity);
       if (!Number.isInteger(capacityNum) || capacityNum < 1) {
+        throw new AppError("A capacity of at least 1 is required for participation events", 400);
+      }
+      if (capacityNum < registrationCount) {
         throw new AppError(
-          "A capacity of at least 1 is required for participation events",
-          400,
+          `Capacity can't be less than the ${registrationCount} student${registrationCount === 1 ? "" : "s"} already registered`,
+          409
         );
       }
       event.capacity = capacityNum;
     }
-  } else if (
-    feeType !== undefined ||
-    amount !== undefined ||
-    capacity !== undefined
-  ) {
-    throw new AppError(
-      "Audience-only events cannot have a fee type, amount, or capacity",
-      400,
-    );
+  } else if (feeType !== undefined || amount !== undefined || capacity !== undefined) {
+    throw new AppError("Audience-only events cannot have a fee type, amount, or capacity", 400);
   }
 
   if (cancelled !== undefined) {
@@ -524,14 +473,10 @@ export const updateEvent = asyncHandler(async (req, res) => {
   // covers both "required and missing" (reason undefined -> invalid) and
   // "provided, so validate it properly" in one check.
   const justCancelled = event.cancelled === true && wasCancelled !== true;
-  const rescheduled =
-    dateTime !== undefined && event.dateTime.getTime() !== originalDateTimeMs;
+  const rescheduled = dateTime !== undefined && event.dateTime.getTime() !== originalDateTimeMs;
 
   if (justCancelled || rescheduled || reason !== undefined) {
-    const check = validateBoundedString(reason, {
-      max: EVENT_CHANGE_REASON_MAX_LENGTH,
-      label: "Reason",
-    });
+    const check = validateBoundedString(reason, { max: EVENT_CHANGE_REASON_MAX_LENGTH, label: "Reason" });
     if (!check.valid) throw new AppError(check.error, 400);
     event.lastChangeReason = check.trimmed;
     event.lastChangeAt = new Date();
