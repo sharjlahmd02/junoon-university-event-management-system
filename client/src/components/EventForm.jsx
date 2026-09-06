@@ -29,6 +29,12 @@ const EMPTY_VALUES = {
 // Shared by CreateEvent and EditEvent (task 2.8) -- same field set and
 // validation for both, so the two flows can't silently drift apart.
 //
+// Layout: Section 1 (title/description -- the fields that actually need
+// horizontal room) spans the full page width; Sections 2+3 (short,
+// settings-style fields) sit side by side below in a two-column grid, so
+// both are visible together without the page height of three fully
+// stacked full-width panels (collapses to one column on narrow screens).
+//
 // Cancelling an event lives elsewhere (see CancelEventCard), a separate,
 // explicit action -- more consequential and harder to undo than editing a
 // typo in the venue, so it isn't one more checkbox buried in here.
@@ -144,43 +150,28 @@ function EventForm({ mode, initialEvent, onSubmit, submitLabel, cancelHref = "/d
         </p>
       )}
 
-      <section className="event-form-section">
+      <section className="event-form-section event-form-section--full">
         <div className="event-form-section-heading">
           <p className="event-form-section-eyebrow">01 — Event details</p>
           <p className="event-form-section-hint">What is it, and what should people know?</p>
         </div>
 
-        <label className="event-form-field">
-          <span>Title</span>
-          <input
-            type="text"
-            value={values.title}
-            onChange={(e) => setField("title", e.target.value)}
-            maxLength={TITLE_MAX}
-            placeholder="e.g. Robotics Cup 2026"
-            required
-          />
-          <small className="event-form-counter">
-            {values.title.length}/{TITLE_MAX}
-          </small>
-        </label>
+        <div className="event-form-row event-form-row--3col">
+          <label className="event-form-field event-form-field--wide">
+            <span>Title</span>
+            <input
+              type="text"
+              value={values.title}
+              onChange={(e) => setField("title", e.target.value)}
+              maxLength={TITLE_MAX}
+              placeholder="e.g. Robotics Cup 2026"
+              required
+            />
+            <small className="event-form-counter">
+              {values.title.length}/{TITLE_MAX}
+            </small>
+          </label>
 
-        <label className="event-form-field">
-          <span>Description</span>
-          <textarea
-            value={values.description}
-            onChange={(e) => setField("description", e.target.value)}
-            rows={6}
-            maxLength={DESCRIPTION_MAX}
-            placeholder="What's happening, who it's for, and anything students should know before registering."
-            required
-          />
-          <small className="event-form-counter">
-            {values.description.length}/{DESCRIPTION_MAX}
-          </small>
-        </label>
-
-        <div className="event-form-row">
           <label className="event-form-field">
             <span>Event type</span>
             <select value={values.type} onChange={(e) => setField("type", e.target.value)} disabled={isEdit}>
@@ -201,88 +192,122 @@ function EventForm({ mode, initialEvent, onSubmit, submitLabel, cancelHref = "/d
             </select>
           </label>
         </div>
+
+        <label className="event-form-field">
+          <span>Description</span>
+          <textarea
+            value={values.description}
+            onChange={(e) => setField("description", e.target.value)}
+            rows={5}
+            maxLength={DESCRIPTION_MAX}
+            placeholder="What's happening, who it's for, and anything students should know before registering."
+            required
+          />
+          <small className="event-form-counter">
+            {values.description.length}/{DESCRIPTION_MAX}
+          </small>
+        </label>
       </section>
 
-      <section className="event-form-section">
-        <div className="event-form-section-heading">
-          <p className="event-form-section-eyebrow">02 — Where &amp; when</p>
-          <p className="event-form-section-hint">Venue, department, and the schedule.</p>
-        </div>
-
-        <div className="event-form-row">
-          <label className="event-form-field">
-            <span>Venue</span>
-            <input
-              type="text"
-              value={values.venue}
-              onChange={(e) => setField("venue", e.target.value)}
-              maxLength={200}
-              placeholder="e.g. Engineering Block, Ground Floor"
-              required
-            />
-          </label>
-
-          <label className="event-form-field">
-            <span>Department</span>
-            <input
-              type="text"
-              value={values.department}
-              onChange={(e) => setField("department", e.target.value)}
-              placeholder="e.g. Computer Science"
-              required
-            />
-          </label>
-
-          <label className="event-form-field">
-            <span>Date &amp; time</span>
-            <input
-              type="datetime-local"
-              value={values.dateTime}
-              onChange={(e) => setField("dateTime", e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="event-form-field">
-            <span>End date &amp; time (optional)</span>
-            <input
-              type="datetime-local"
-              value={values.endDateTime}
-              onChange={(e) => setField("endDateTime", e.target.value)}
-            />
-          </label>
-        </div>
-
-        {isEdit && dateChanged && (
-          <label className="event-form-field event-form-reason-field">
-            <span>Reason for reschedule</span>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={2}
-              maxLength={500}
-              placeholder="Registered students will see this reason."
-              required
-            />
-          </label>
-        )}
-      </section>
-
-      {values.type === "participation" && (
+      <div className="event-form-columns">
         <section className="event-form-section">
           <div className="event-form-section-heading">
-            <p className="event-form-section-eyebrow">03 — Fees &amp; capacity</p>
-            <p className="event-form-section-hint">Registration is offline-confirmed (spec.md §3.2) — no payment gateway.</p>
+            <p className="event-form-section-eyebrow">02 — Where &amp; when</p>
+            <p className="event-form-section-hint">Venue, department, and the schedule.</p>
           </div>
 
           <div className="event-form-row">
             <label className="event-form-field">
-              <span>Fee type</span>
-              <select value={values.feeType} onChange={(e) => setField("feeType", e.target.value)}>
-                <option value="free">Free</option>
-                <option value="paid">Paid</option>
-              </select>
+              <span>Venue</span>
+              <input
+                type="text"
+                value={values.venue}
+                onChange={(e) => setField("venue", e.target.value)}
+                maxLength={200}
+                placeholder="e.g. Engineering Block"
+                required
+              />
             </label>
+
+            <label className="event-form-field">
+              <span>Department</span>
+              <input
+                type="text"
+                value={values.department}
+                onChange={(e) => setField("department", e.target.value)}
+                placeholder="e.g. Computer Science"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="event-form-row">
+            <label className="event-form-field">
+              <span>Date &amp; time</span>
+              <input
+                type="datetime-local"
+                value={values.dateTime}
+                onChange={(e) => setField("dateTime", e.target.value)}
+                required
+              />
+            </label>
+
+            <label className="event-form-field">
+              <span>End (optional)</span>
+              <input
+                type="datetime-local"
+                value={values.endDateTime}
+                onChange={(e) => setField("endDateTime", e.target.value)}
+              />
+            </label>
+          </div>
+
+          {isEdit && dateChanged && (
+            <label className="event-form-field event-form-reason-field">
+              <span>Reason for reschedule</span>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={2}
+                maxLength={500}
+                placeholder="Registered students will see this reason."
+                required
+              />
+            </label>
+          )}
+        </section>
+
+        {values.type === "participation" && (
+          <section className="event-form-section">
+            <div className="event-form-section-heading">
+              <p className="event-form-section-eyebrow">03 — Fees &amp; capacity</p>
+              <p className="event-form-section-hint">
+                Registration is offline-confirmed (spec.md §3.2) — no payment gateway.
+              </p>
+            </div>
+
+            <div className="event-form-row">
+              <label className="event-form-field">
+                <span>Fee type</span>
+                <select value={values.feeType} onChange={(e) => setField("feeType", e.target.value)}>
+                  <option value="free">Free</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </label>
+
+              <label className="event-form-field">
+                <span>Capacity</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={values.capacity}
+                  onChange={(e) => setField("capacity", e.target.value)}
+                  placeholder="Seats available"
+                  required
+                />
+              </label>
+            </div>
 
             {values.feeType === "paid" && (
               <label className="event-form-field">
@@ -296,22 +321,9 @@ function EventForm({ mode, initialEvent, onSubmit, submitLabel, cancelHref = "/d
                 />
               </label>
             )}
-
-            <label className="event-form-field">
-              <span>Capacity</span>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={values.capacity}
-                onChange={(e) => setField("capacity", e.target.value)}
-                placeholder="Seats available"
-                required
-              />
-            </label>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
 
       <div className="event-form-actions">
         <button type="submit" className="btn-primary event-form-submit" disabled={submitting}>

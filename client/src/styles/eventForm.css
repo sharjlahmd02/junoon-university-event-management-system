@@ -1,5 +1,5 @@
 .event-form-page {
-  max-width: 1080px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
   padding: 32px var(--side-padding) 60px;
 }
@@ -45,24 +45,32 @@
   z-index: 5;
 }
 
-/* --- Sectioned layout: each logical group of fields is its own panel
-   with a numbered eyebrow label, reading like a real multi-step creation
-   flow rather than one long list of inputs. --- */
+/* --- Layout: Section 1 spans full width (title/description need the
+   room); Sections 2+3 sit side by side below in a two-column grid so
+   both are visible together instead of three stacked full-width panels
+   forcing extra scrolling for no reason. --- */
+
+.event-form-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .event-form-columns {
+    grid-template-columns: 1fr;
+  }
+}
 
 .event-form-section {
   background: var(--paper-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  padding: 26px 32px;
+  padding: 22px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-@media (max-width: 640px) {
-  .event-form-section {
-    padding: 20px 20px;
-  }
 }
 
 .event-form-section-heading {
@@ -87,13 +95,19 @@
 
 .event-form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px 24px;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
 }
 
-.event-form-row .event-form-field {
-  max-width: 420px;
+.event-form-row--3col {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .event-form-row,
+  .event-form-row--3col {
+    grid-template-columns: 1fr;
+  }
 }
 
 .event-form-field {
@@ -102,6 +116,7 @@
   gap: 6px;
   font-family: var(--font-body);
   position: relative;
+  min-width: 0;
 }
 
 .event-form-field > span {
@@ -120,6 +135,7 @@
   border-radius: var(--radius-button);
   background: var(--paper);
   color: var(--ink);
+  width: 100%;
 }
 
 .event-form-field input:focus,
