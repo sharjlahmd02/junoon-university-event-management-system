@@ -4,6 +4,7 @@ import Registration from "../models/Registeration.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { generatePassQrDataUrl } from "../utils/QrUtils.js";
+import { REGISTRATION_PAYMENT_STATUSES } from "../utils/validators.js";
 
 // Student-only (enforced by requireRole in the route). Handles the full
 // registration state transition from spec.md §3.2:
@@ -157,4 +158,44 @@ export const getMyPassQr = asyncHandler(async (req, res) => {
   const qrDataUrl = await generatePassQrDataUrl(registration.passCode);
 
   res.status(200).json({ qrDataUrl });
+});
+
+// Organizer, own event only. Serves both spec.md §4.7's "pending payment
+// confirmation queue" and §4.5's "full participant list view" from one
+// endpoint via an optional ?status= filter, rather than building two
+// near-duplicate list endpoints. Student details populated in (name,
+// email, phone, department, enrolmentNumber) so the organizer can
+// actually identify who's who -- User's own toJSON transform still
+// strips passwordHash etc. even through the populate.
+export const getEventRegistrations = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid event id", 400);
+  }
+
+  const event = await Event.findById(id);
+  if (!event) throw new AppError("Event not found", 404);
+
+  if (String(event.organizerId) !== String(req.user._id)) {
+    throw new AppError("You can only view registrations for your own events", 403);
+  }
+
+  const filter = { eventId: event._id };
+
+  const { status } = req.query;
+  if (status !== undefined) {
+    if (!REGISTRATION_PAYMENT_STATUSES.includes(status)) {
+      throw new AppError(`Status must be one of: ${REGISTRATION_PAYMENT_STATUSES.join(", ")}`, 400);
+    }
+    filter.paymentStatus = status;
+  }
+
+  const registrations = await Registration.find(filter)
+    .populate("studentId", "name email phone department enrolmentNumber")
+    .sort({ registeredOn: 1 });
+
+  res.status(200).json({
+    registrations: registrations.map((r) => r.toJSON()),
+  });
 });
