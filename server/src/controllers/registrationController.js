@@ -1,0 +1,78 @@
+import mongoose from "mongoose";
+import Event from "../models/Event.js";
+import Registration from "../models/Registration.js";
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../utils/asyncHandler.js";
+
+// Student-only (enforced by requireRole in the route). Handles the full
+// registration state transition from spec.md §3.2:
+//   Free        -> paymentStatus "n/a", pass usable immediately
+//   Paid        -> paymentStatus "pending", pass unlocked later by an
+//                  organizer confirming payment (task 3.3)
+export const registerForEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid event id", 400);
+  }
+
+  const event = await Event.findById(id);
+  if (!event) throw new AppError("Event not found", 404);
+
+  if (event.type !== "participation") {
+    throw new AppError("This is an announcement-only event and doesn't require registration", 400);
+  }
+
+  // Covers "already started," "completed," and "cancelled" in one check --
+  // only a genuinely upcoming event accepts new registrations. Read from
+  // the already-fetched document's computed virtual; a start-time race of
+  // a few milliseconds here isn't a meaningful concern the way the
+  // capacity race below is.
+  if (event.status !== "upcoming") {
+    throw new AppError("Registration is closed for this event", 409);
+  }
+
+  // Atomic slot reservation (Phase 3 kickoff decision -- see Event.js's
+  // registeredCount comment for why this exists instead of a plain
+  // count-then-insert, which is NOT atomic and can overshoot capacity
+  // under concurrent requests). $expr reads capacity live from the
+  // document at the moment of the update rather than trusting the
+  // earlier `event` snapshot, which could be stale if an organizer edited
+  // capacity in between.
+  const reserved = await Event.findOneAndUpdate(
+    { _id: event._id, $expr: { $lt: ["$registeredCount", "$capacity"] } },
+    { $inc: { registeredCount: 1 } },
+    { new: true }
+  );
+
+  if (!reserved) {
+    throw new AppError("This event is at full capacity", 409);
+  }
+
+  const paymentStatus = event.feeType === "paid" ? "pending" : "n/a";
+  const amountCharged = event.feeType === "paid" ? event.amount : undefined;
+
+  let registration;
+  try {
+    registration = await Registration.create({
+      eventId: event._id,
+      studentId: req.user._id,
+      paymentStatus,
+      amountCharged,
+    });
+  } catch (err) {
+    // Roll back the slot just reserved above -- either a genuine write
+    // failure, or the unique (eventId, studentId) index catching a
+    // duplicate registration (E11000, e.g. a double-click or a retry).
+    // Without this rollback, a failed/duplicate attempt would
+    // permanently consume a real seat that was never actually filled.
+    await Event.updateOne({ _id: event._id }, { $inc: { registeredCount: -1 } });
+
+    if (err.code === 11000) {
+      throw new AppError("You're already registered for this event", 409);
+    }
+    throw err;
+  }
+
+  res.status(201).json({ registration: registration.toJSON() });
+});

@@ -113,6 +113,23 @@ const eventSchema = new Schema(
         return this.type === "participation";
       },
     },
+    // Denormalized, atomically-maintained count of registration slots
+    // claimed against this event (Phase 3 kickoff decision, superseding
+    // the pure count-on-read plan above for THIS specific purpose only --
+    // a race-free capacity check needs a single-document atomic
+    // increment, which count-on-read can't provide without MongoDB
+    // transactions, which need a replica set this project can't assume
+    // it has). This is the source of truth for "is there a free slot,"
+    // not a display number recomputed elsewhere -- every code path that
+    // removes a Registration (e.g. a future "cancel my registration"
+    // endpoint) MUST decrement this atomically in the same operation, or
+    // it will drift upward forever and eventually block registration on
+    // an event that isn't really full.
+    registeredCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     organizerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -126,6 +143,11 @@ const eventSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // Generalized beyond just cancellation: spec.md §4.5 requires "a
+    // required reason logged" for BOTH cancel and reschedule, not cancel
+    // alone -- one field covers both rather than needing two near-
+    // identical ones. Which action triggered it is inferable from
+    // `cancelled` itself; lastChangeAt timestamps whichever happened.
     lastChangeReason: {
       type: String,
       trim: true,
@@ -140,7 +162,7 @@ const eventSchema = new Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // --- Conditional-field guards (mirrors the User model's role-based guards) ---
@@ -156,8 +178,7 @@ eventSchema.path("feeType").validate(function (value) {
 
 eventSchema.path("amount").validate(function (value) {
   if (this.type === "audience") return value === undefined;
-  if (this.type === "participation" && this.feeType === "free")
-    return value === undefined;
+  if (this.type === "participation" && this.feeType === "free") return value === undefined;
   return true;
 }, "amount is only applicable to paid participation events");
 
@@ -166,8 +187,11 @@ eventSchema.path("capacity").validate(function (value) {
   return true;
 }, "capacity is not applicable to audience-only events");
 
-// Required reason on cancellation (spec.md §4.5: "cancel/reschedule
-// allowed with a required reason logged").
+// Required whenever an *existing* event is cancelled or rescheduled
+// (spec.md §4.5). `isModified` reflects changes since the document was
+// loaded, so this only fires on an actual cancel/reschedule action -- not
+// on every subsequent save of an already-cancelled event, and not on
+// initial creation (`isNew`).
 eventSchema.path("lastChangeReason").validate(function (value) {
   if (this.isNew) return true;
   const requiresReason =
@@ -176,6 +200,7 @@ eventSchema.path("lastChangeReason").validate(function (value) {
   if (!requiresReason) return true;
   return typeof value === "string" && value.trim().length > 0;
 }, "A reason is required when cancelling or rescheduling an event");
+
 // --- Derived status (Phase 2 kickoff decision: computed, not stored) ---
 // upcoming -> live -> completed based on dateTime/endDateTime, with
 // cancelled as the only override. If endDateTime is absent, the event is

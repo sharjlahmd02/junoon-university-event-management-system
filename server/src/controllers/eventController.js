@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Event from "../models/Event.js";
-import Registration from "../models/Registration.js";
+import Registration from "../models/Registeration.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
