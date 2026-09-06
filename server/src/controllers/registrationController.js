@@ -76,3 +76,40 @@ export const registerForEvent = asyncHandler(async (req, res) => {
 
   res.status(201).json({ registration: registration.toJSON() });
 });
+
+// Organizer, own event only. Flips a Paid registration's paymentStatus
+// from "pending" to "paid" once the organizer has confirmed the offline
+// payment (spec.md §3.2/§4.7) -- this is what unlocks the student's QR
+// pass. No online transaction handling of any kind, per spec.md §3.2.
+export const confirmPayment = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid registration id", 400);
+  }
+
+  const registration = await Registration.findById(id);
+  if (!registration) throw new AppError("Registration not found", 404);
+
+  // Ownership is checked via the registration's event, not the
+  // registration itself -- Registration has no organizerId of its own.
+  const event = await Event.findById(registration.eventId);
+  if (!event) throw new AppError("Associated event not found", 404);
+
+  if (String(event.organizerId) !== String(req.user._id)) {
+    throw new AppError("You can only confirm payments for your own events", 403);
+  }
+
+  if (registration.paymentStatus === "n/a") {
+    throw new AppError("This registration doesn't require payment", 400);
+  }
+
+  if (registration.paymentStatus === "paid") {
+    throw new AppError("This payment has already been confirmed", 409);
+  }
+
+  registration.paymentStatus = "paid";
+  await registration.save();
+
+  res.status(200).json({ registration: registration.toJSON() });
+});

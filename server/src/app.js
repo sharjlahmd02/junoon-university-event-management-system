@@ -6,6 +6,7 @@ import healthRoutes from "./routes/healthRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import twoFactorRoutes from "./routes/twoFactorRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import registrationRoutes from "./routes/registrationRoutes.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 
@@ -26,6 +27,7 @@ app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth/2fa", twoFactorRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/registrations", registrationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
