@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 import Event from "../models/Event.js";
-import Registration from "../models/Registration.js";
+import Registration from "../models/Registeration.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { generatePassQrDataUrl } from "../utils/QrUtils.js";
 
 // Student-only (enforced by requireRole in the route). Handles the full
 // registration state transition from spec.md §3.2:
@@ -112,4 +113,48 @@ export const confirmPayment = asyncHandler(async (req, res) => {
   await registration.save();
 
   res.status(200).json({ registration: registration.toJSON() });
+});
+
+// Student-only. Own registrations, event details populated in so the
+// dashboard doesn't need a second round-trip per registration. Does NOT
+// include QR images -- generating one for every row in a list is
+// wasteful; that's what the dedicated pass endpoint below is for.
+export const getMyRegistrations = asyncHandler(async (req, res) => {
+  const registrations = await Registration.find({ studentId: req.user._id })
+    .populate("eventId", "title dateTime endDateTime venue department category type feeType amount cancelled")
+    .sort({ registeredOn: -1 });
+
+  res.status(200).json({
+    registrations: registrations.map((r) => r.toJSON()),
+  });
+});
+
+// Student-own-registration-only. Not in tasks.md's literal Phase 3 list,
+// but added alongside 3.5 since spec.md §4.2's "digital pass view... with
+// QR code" needs somewhere to actually call task 3.4's QR utility from --
+// without this, that utility has no caller until client work much later.
+// Returns the QR image itself, never the raw passCode (select:false on
+// the schema is the first guard; explicitly selecting it here is the one
+// deliberate exception, and it never leaves this function as raw text).
+export const getMyPassQr = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid registration id", 400);
+  }
+
+  const registration = await Registration.findById(id).select("+passCode");
+  if (!registration) throw new AppError("Registration not found", 404);
+
+  if (String(registration.studentId) !== String(req.user._id)) {
+    throw new AppError("You can only view your own pass", 403);
+  }
+
+  if (!registration.passReady) {
+    throw new AppError("Your pass isn't ready yet — payment hasn't been confirmed", 400);
+  }
+
+  const qrDataUrl = await generatePassQrDataUrl(registration.passCode);
+
+  res.status(200).json({ qrDataUrl });
 });
