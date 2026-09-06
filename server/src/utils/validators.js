@@ -44,7 +44,10 @@ export const EVENT_TITLE_MAX_LENGTH = 150;
 export const EVENT_DESCRIPTION_MAX_LENGTH = 5000;
 export const EVENT_VENUE_MAX_LENGTH = 200;
 export const EVENT_DEPARTMENT_MAX_LENGTH = 100;
-export const EVENT_CHANGE_REASON_MAX_LENGTH = 500; // was EVENT_CANCEL_REASON_MAX_LENGTH
+export const EVENT_CHANGE_REASON_MAX_LENGTH = 500;
+
+// Registration-related constants (spec.md §3.2, §7).
+export const REGISTRATION_PAYMENT_STATUSES = ["n/a", "pending", "paid"];
 
 // Generic bounded free-text check shared by several Event fields (title,
 // venue, cancelReason) that don't need their own character-class rules the
