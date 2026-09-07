@@ -9,9 +9,7 @@ function Login() {
   const { login, completeTwoFactorLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showRegisteredBanner, setShowRegisteredBanner] = useState(
-    Boolean(location.state?.registered),
-  );
+  const [showRegisteredBanner, setShowRegisteredBanner] = useState(Boolean(location.state?.registered));
 
   useEffect(() => {
     if (!showRegisteredBanner) return;
@@ -31,8 +29,15 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function routeAfterLogin(user) {
-    navigate(dashboardPathFor(user.role));
+    // Supports EventRegistrationCard sending an unauthenticated visitor
+    // here with { state: { from: location.pathname } } (task 3.7) so
+    // logging in to register actually returns them to the event they
+    // were trying to register for, instead of always landing on their
+    // dashboard regardless of what brought them to /login.
+    const from = location.state?.from;
+    navigate(from || dashboardPathFor(user.role));
   }
+
   async function handleCredentialsSubmit(e) {
     e.preventDefault();
     setError("");
@@ -47,10 +52,7 @@ function Login() {
       const result = await login({ email: email.trim(), password });
       if (result.twoFactorEnrollmentRequired) {
         navigate("/2fa-setup", {
-          state: {
-            enrollmentToken: result.enrollmentToken,
-            pendingUser: result.user,
-          },
+          state: { enrollmentToken: result.enrollmentToken, pendingUser: result.user },
         });
         return;
       }
@@ -79,10 +81,7 @@ function Login() {
 
     setIsSubmitting(true);
     try {
-      const { user } = await completeTwoFactorLogin({
-        pendingToken,
-        code: code.trim(),
-      });
+      const { user } = await completeTwoFactorLogin({ pendingToken, code: code.trim() });
       routeAfterLogin(user);
     } catch (err) {
       setError(err.message || "Invalid code. Please try again.");
@@ -104,13 +103,10 @@ function Login() {
       <div className="auth-page">
         <div className="auth-card">
           <p className="auth-eyebrow">Two-factor verification</p>
-          <h1 className="auth-heading">
-            Almost there
-            {pendingUser?.name ? `, ${pendingUser.name.split(" ")[0]}` : ""}
-          </h1>
+          <h1 className="auth-heading">Almost there{pendingUser?.name ? `, ${pendingUser.name.split(" ")[0]}` : ""}</h1>
           <p className="auth-subheading">
-            Enter the 6-digit code from your authenticator app. Lost your
-            device? You can use one of your backup codes instead.
+            Enter the 6-digit code from your authenticator app. Lost your device? You can use one of your backup
+            codes instead.
           </p>
 
           {error && <p className="form-error">{error}</p>}
@@ -130,21 +126,13 @@ function Login() {
               />
             </div>
 
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isSubmitting}
-            >
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
               {isSubmitting ? "Verifying…" : "Verify"}
             </button>
           </form>
 
           <div className="auth-footer">
-            <button
-              type="button"
-              className="btn-link"
-              onClick={backToCredentials}
-            >
+            <button type="button" className="btn-link" onClick={backToCredentials}>
               Back to login
             </button>
           </div>
@@ -158,14 +146,9 @@ function Login() {
       <div className="auth-card">
         <p className="auth-eyebrow">Junoon</p>
         <h1 className="auth-heading">Welcome back</h1>
-        <p className="auth-subheading">
-          Log in to register for events, check your pass, or manage what you
-          organize.
-        </p>
+        <p className="auth-subheading">Log in to register for events, check your pass, or manage what you organize.</p>
 
-        {showRegisteredBanner && (
-          <p className="form-success">Account created — log in to continue.</p>
-        )}
+        {showRegisteredBanner && <p className="form-success">Account created — log in to continue.</p>}
         {error && <p className="form-error">{error}</p>}
 
         <form className="auth-form" onSubmit={handleCredentialsSubmit}>

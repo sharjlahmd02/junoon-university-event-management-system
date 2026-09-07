@@ -456,16 +456,41 @@
 }
 
 .event-detail-register-btn {
+  display: block;
   width: 100%;
+  text-align: center;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-body);
   padding: 12px 0;
   border-radius: var(--radius-button);
-  border: 1px solid var(--line);
-  background: var(--line);
-  color: var(--stone);
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.event-detail-register-btn:hover:not(:disabled) {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.event-detail-register-btn:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+.event-detail-register-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-detail-register-btn {
+    transition: none;
+  }
 }
 
 .event-detail-register-note {
@@ -480,4 +505,18 @@
   font-size: var(--text-body);
   color: var(--stone);
   margin: 0;
+}
+
+.event-detail-notice-text--pending {
+  color: var(--status-pending-text);
+  background: var(--status-pending-bg);
+  border-radius: var(--radius-button);
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+
+.event-detail-notice-text--success {
+  color: var(--status-free-text);
+  font-weight: 500;
+  margin-bottom: 14px;
 }

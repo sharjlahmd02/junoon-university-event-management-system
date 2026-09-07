@@ -103,9 +103,9 @@ function Browse() {
             one place.
           </p>
         </div>
-        <Link to="/login" className="browse-login-link">
+        {/* <Link to="/login" className="browse-login-link">
           Log in
-        </Link>
+        </Link> */}
       </header>
 
       <div className="browse-filter-panel">

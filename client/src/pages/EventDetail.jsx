@@ -2,32 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { eventsApi } from "../api/eventsApi.js";
 import StatusPill from "../components/StatusPill.jsx";
+import EventRegistrationCard from "../components/EventRegistrationCard.jsx";
 import { formatCategoryLabel } from "../utils/eventConstants.js";
 import "../styles/eventDetail.css";
 
-const MONTHS = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC",
-];
-const WEEKDAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function dateParts(iso) {
   const d = new Date(iso);
@@ -36,10 +16,7 @@ function dateParts(iso) {
     day: d.getDate(),
     month: MONTHS[d.getMonth()],
     year: d.getFullYear(),
-    time: d.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-    }),
+    time: d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
   };
 }
 
@@ -48,10 +25,6 @@ function dateParts(iso) {
 //   - banner/guidelines: only rendered if present -- upload isn't wired
 //     up yet (deferred out of task 2.2), so these are always absent today,
 //     shown as simply not there rather than a broken image/link.
-//   - register button: Registration doesn't exist until Phase 3, so
-//     Participation events get a disabled "Registration opens soon" state
-//     instead of a dead button. Audience-only events get an explanatory
-//     note instead, per spec.md §3.1 (nothing to register for).
 function EventDetail() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
@@ -75,9 +48,7 @@ function EventDetail() {
         if (err.status === 404 || err.status === 400) {
           setLoadState("notfound");
         } else {
-          setError(
-            err.message || "Could not load this event. Please try again.",
-          );
+          setError(err.message || "Could not load this event. Please try again.");
           setLoadState("error");
         }
       });
@@ -128,10 +99,7 @@ function EventDetail() {
     );
   }
 
-  const organizer =
-    event.organizerId && typeof event.organizerId === "object"
-      ? event.organizerId
-      : null;
+  const organizer = event.organizerId && typeof event.organizerId === "object" ? event.organizerId : null;
   const start = dateParts(event.dateTime);
   const end = event.endDateTime ? dateParts(event.endDateTime) : null;
 
@@ -150,21 +118,15 @@ function EventDetail() {
         </div>
       )}
 
-      {/* Scaled-up ticket stub, per design.md §5: "This same visual
-          language extends to the digital pass... at a larger scale." */}
       <div className="event-detail-ticket">
         <div className="event-detail-ticket-main">
           <div className="event-detail-header-top">
-            <p className="event-detail-eyebrow">
-              {formatCategoryLabel(event.category)}
-            </p>
+            <p className="event-detail-eyebrow">{formatCategoryLabel(event.category)}</p>
             <StatusPill status={event.status} />
           </div>
           <h1 className="event-detail-title">{event.title}</h1>
           <p className="event-detail-venue">{event.venue}</p>
-          <span className="event-detail-department-tag">
-            {event.department}
-          </span>
+          <span className="event-detail-department-tag">{event.department}</span>
         </div>
         <div className="event-detail-ticket-perforation" aria-hidden="true">
           <span className="event-detail-ticket-dot event-detail-ticket-dot--top" />
@@ -202,7 +164,6 @@ function EventDetail() {
           {event.guidelinesDoc && (
             <section>
               <h2 className="event-detail-section-title">Guidelines</h2>
-
               <a
                 href={event.guidelinesDoc}
                 target="_blank"
@@ -219,17 +180,11 @@ function EventDetail() {
               <h2 className="event-detail-section-title">Organized by</h2>
               <div className="event-detail-organizer-card">
                 <p className="event-detail-organizer-name">{organizer.name}</p>
-                <a
-                  className="event-detail-organizer-contact"
-                  href={`mailto:${organizer.email}`}
-                >
+                <a className="event-detail-organizer-contact" href={`mailto:${organizer.email}`}>
                   {organizer.email}
                 </a>
                 {organizer.phone && (
-                  <a
-                    className="event-detail-organizer-contact"
-                    href={`tel:${organizer.phone}`}
-                  >
+                  <a className="event-detail-organizer-contact" href={`tel:${organizer.phone}`}>
                     {organizer.phone}
                   </a>
                 )}
@@ -240,33 +195,10 @@ function EventDetail() {
 
         <aside className="event-detail-sidebar">
           {event.type === "participation" ? (
-            <div className="event-detail-action-card">
-              <p className="event-detail-fee-label">
-                {event.feeType === "paid" ? "Registration fee" : "Entry"}
-              </p>
-              <p className="event-detail-fee">
-                {event.feeType === "paid" ? `Rs. ${event.amount}` : "Free"}
-              </p>
-              <div className="event-detail-capacity-row">
-                <span>Capacity</span>
-                <span>{event.capacity} seats</span>
-              </div>
-              <button
-                type="button"
-                className="event-detail-register-btn"
-                disabled
-              >
-                Registration opens soon
-              </button>
-              <p className="event-detail-register-note">
-                Registration isn't open yet — check back closer to the event.
-              </p>
-            </div>
+            <EventRegistrationCard event={event} />
           ) : (
             <div className="event-detail-action-card">
-              <p className="event-detail-notice-text">
-                This is an announcement. No registration is required.
-              </p>
+              <p className="event-detail-notice-text">This is an announcement. No registration is required.</p>
             </div>
           )}
         </aside>
